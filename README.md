@@ -1,6 +1,69 @@
 # CarND-Path-Planning-Project
 Self-Driving Car Engineer Nanodegree Program
-   
+
+[//]: # (Image References)
+[image1]: ./result/6mile_8min.png
+[image2]: ./result/67mile.png
+
+
+### Reflection
+![alt text][image1]
+
+
+
+Most part of the code is from the Path Planning Walkthrough [Video](https://youtu.be/7sI3VHFPP0w). 
+
+Spline tool is used to generate trajectory path. I am using almost the same parameters as in the video, looking 50 points ahead (50*0.02 = 1 seconds). To generate these points, 3 waypoints ahead (+30m, +60m, +90m) are used. 
+
+For behavior planning, we only need to control speed and change lane. 
+
+1.Speed. 
+
+If the car is too close to the car ahead of it, the car needs to slow down and try to change lane or keep lane. If the car is below the speed limit and far away from the car ahead of it, the car needs to speed up. I used the numbers from the walkthrough video. The reference speed only change slightly each time, which helps to minimize Max Acceleration and Jerk. 
+
+```
+  // change car speed
+  if(too_close) {
+    ref_vel -= 0.224;
+  }
+  else if (ref_vel < 48.5) {
+    ref_vel += 0.224;
+  }
+```
+
+2.Change Lane. 
+
+When the car is too close to the car in its front, the car should change lane when possible. I used Sensor Fusion Data to detect all the cars on the road. I initialized int array `int car_in_lane[3] = {0,0,0};` for all 3 lanes, and then determine whether other lanes are occupied by other cars (within range of -5m to 25m). 
+When the car is at lane0 or lane2, if it's too close to the car in front and lane1 is available, then change to lane1. When the car is in the middle lane1, then try to change to lane0 or lane2 if it's available. 
+
+```
+  if (too_close) {
+    if(lane==0) {
+      if (car_in_lane[1]==0)
+        lane = 1;
+      else
+        lane = 0;
+    }
+    else if (lane==1) {
+      if (car_in_lane[0]==0)
+        lane = 0;
+      else if (car_in_lane[2]==0)
+        lane = 2;
+      else
+        lane = 1;
+    }
+    else if (lane==2) {
+      if (car_in_lane[1]==0)
+        lane = 1;
+      else
+        lane = 2;
+    }
+    cout << "lane selected: " << lane << endl;
+  }
+```
+![alt text][image2]
+In the end, the car is able to drive at least 4.32 miles without incident, it drives according to the speed limit, Max Acceleration and Jerk are not Exceeded, it does not have collisions, it can stay in its lane, except for the time between changing lanes. Acutally I tried to run 67miles 1.5 hours without any problem. The result is pretty good. 
+
 ### Simulator.
 You can download the Term3 Simulator which contains the Path Planning Project from the [releases tab (https://github.com/udacity/self-driving-car-sim/releases).
 
